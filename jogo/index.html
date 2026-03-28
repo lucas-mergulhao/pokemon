@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pokémon ULTRA PERSPECTIVA - Final</title>
+
+    <style>
+        :root {
+            --primary: #ff512f;
+            --secondary: #dd2476;
+            --accent: #00ffff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000;
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- BACKGROUND ANIMADO --- */
+        .bg-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #1e3c72, #2a5298, #726193);
+            z-index: -1;
+        }
+
+        .stars {
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background-image: radial-gradient(white 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: moveStars 100s linear infinite;
+            opacity: 0.3;
+        }
+
+        .ground {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 50%;
+            background: 
+                linear-gradient(rgba(0, 255, 255, 0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 255, 255, 0.15) 1px, transparent 1px);
+            background-size: 60px 60px;
+            transform: perspective(400px) rotateX(60deg);
+            transform-origin: top;
+            animation: moveGround 2s linear infinite;
+        }
+
+        @keyframes moveStars { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+        @keyframes moveGround { from { background-position: 0 0; } to { background-position: 0 60px; } }
+
+        /* --- MENU --- */
+        #menu {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #menu h1 { font-size: 2rem; margin-bottom: 20px; text-shadow: 0 0 10px var(--accent); }
+
+        /* --- GAME LAYOUT --- */
+        #game {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+            width: 100%;
+        }
+
+        /* Cena Superior */
+        .battle-scene {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        #player {
+            position: absolute;
+            bottom: -5%;
+            left: -10%;
+            width: 70vw;
+            max-width: 480px;
+            z-index: 5;
+            filter: drop-shadow(0 0 20px rgba(255,255,255,0.2));
+            pointer-events: none;
+        }
+
+        #enemy {
+            position: absolute;
+            top: 20%;
+            right: 10%;
+            width: 35vw;
+            max-width: 200px;
+            z-index: 2;
+            filter: drop-shadow(0 0 15px rgba(255,0,0,0.3));
+            pointer-events: none;
+        }
+
+        /* HUDs */
+        .hud {
+            position: absolute;
+            width: 140px;
+            background: rgba(0,0,0,0.7);
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid var(--accent);
+            box-shadow: 0 0 10px rgba(0,255,255,0.2);
+        }
+        #hudEnemy { top: 20px; left: 20px; }
+        #hudPlayer { bottom: 20px; right: 20px; }
+
+        .life-bar { background: #444; height: 10px; border-radius: 5px; margin-top: 5px; overflow: hidden; }
+        .life { height: 100%; background: #00ff00; width: 100%; transition: 0.5s; }
+
+        /* Painel de Controle Inferior */
+        .ui-panel {
+            background: rgba(15, 15, 15, 0.95);
+            border-top: 3px solid var(--secondary);
+            padding: 15px;
+            min-height: 160px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        #msg {
+            margin: 0 0 12px 0;
+            font-size: 1.1rem;
+            font-weight: bold;
+            height: 1.2em;
+            text-align: center;
+        }
+
+        #ataques {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        /* BOTÕES */
+        button {
+            padding: 12px;
+            border-radius: 10px;
+            border: none;
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            background: linear-gradient(45deg, var(--primary), var(--secondary));
+            color: white;
+            transition: 0.2s;
+            box-shadow: 0 4px 0px #800;
+        }
+
+        button:active { transform: translateY(3px); box-shadow: none; }
+        button:disabled { opacity: 0.5; filter: grayscale(1); }
+
+        /* RESPONSIVIDADE PC */
+        @media (min-width: 768px) {
+            #ataques { grid-template-columns: repeat(4, 1fr); }
+            .hud { width: 220px; }
+            #hudPlayer { bottom: 40px; right: 40px; }
+            #player { left: 5%; bottom: -10%; }
+            #enemy { top: 15%; right: 15%; }
+        }
+
+        /* ANIMAÇÕES */
+        .shake { animation: shake 0.3s ease-in-out; }
+        @keyframes shake {
+            0%, 100% { transform: translate(0,0); }
+            25% { transform: translate(8px, 8px); }
+            75% { transform: translate(-8px, -8px); }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="bg-container">
+        <div class="stars"></div>
+        <div class="ground"></div>
+    </div>
+
+    <div id="menu">
+        <h1>⚔️ ULTRA BATALHA ⚔️</h1>
+        <p>Escolha seu Pokémon para começar:</p>
+        <div style="display: flex; flex-wrap: wrap; justify-content: center;">
+            <button onclick="startGame(0)">Bulbasaur</button>
+            <button onclick="startGame(1)">Charmander</button>
+            <button onclick="startGame(2)">Squirtle</button>
+        </div>
+    </div>
+
+    <div id="game">
+        <div class="battle-scene">
+            <img id="enemy" src="" alt="Inimigo">
+            <img id="player" src="" alt="Jogador">
+
+            <div id="hudEnemy" class="hud">
+                <strong id="eName">Inimigo</strong>
+                <div class="life-bar"><div id="eLife" class="life"></div></div>
+            </div>
+
+            <div id="hudPlayer" class="hud">
+                <strong id="pName">Jogador</strong>
+                <div class="life-bar"><div id="pLife" class="life"></div></div>
+            </div>
+        </div>
+
+        <div class="ui-panel">
+            <p id="msg">Aguardando comando...</p>
+            <div id="ataques"></div>
+        </div>
+    </div>
+
+    <audio id="bgm" loop src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_115b9b0b3f.mp3"></audio>
+    <audio id="atkSound" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+
+    <script>
+        const pokemons = [
+            { nome: "Bulbasaur", tipo: "planta", front: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/1.png", back: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/1.png" },
+            { nome: "Charmander", tipo: "fogo", front: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/4.png", back: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/4.png" },
+            { nome: "Squirtle", tipo: "agua", front: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/7.png", back: "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/7.png" }
+        ];
+
+        let p, e, vidaP = 500, vidaE = 500, turno = 1, potions = 2, potionsEnemy = 2;
+
+        function vantagem(a, b) {
+            if ((a === "agua" && b === "fogo") || (a === "fogo" && b === "planta") || (a === "planta" && b === "agua")) return 1.5;
+            return 1;
+        }
+
+        function startGame(i) {
+            p = pokemons[i];
+            e = pokemons[Math.floor(Math.random() * 3)];
+
+            document.getElementById('menu').style.display = "none";
+            document.getElementById('game').style.display = "flex";
+
+            document.getElementById('player').src = p.back;
+            document.getElementById('enemy').src = e.front;
+            document.getElementById('pName').innerText = p.nome;
+            document.getElementById('eName').innerText = e.nome;
+
+            const bgm = document.getElementById('bgm');
+            bgm.volume = 0.5;
+            bgm.play().catch(() => console.log("Clique na tela para tocar música"));
+
+            mostrarAtaques();
+            atualizar();
+        }
+
+        function mostrarAtaques() {
+            const area = document.getElementById('ataques');
+            area.innerHTML = `
+                <button onclick="atacar(100)">🔥 Forte</button>
+                <button onclick="atacar(50)">⚡ Médio</button>
+                <button onclick="atacar(20)">💨 Fraco</button>
+                <button onclick="curar()">🧪 Cura (${potions})</button>
+            `;
+        }
+
+        function atualizar() {
+            document.getElementById('pLife').style.width = (vidaP / 500 * 100) + "%";
+            document.getElementById('eLife').style.width = (vidaE / 500 * 100) + "%";
+            
+            // Mudar cor da vida
+            const pBar = document.getElementById('pLife');
+            if(vidaP < 150) pBar.style.background = "red";
+            else if(vidaP < 300) pBar.style.background = "orange";
+            else pBar.style.background = "lime";
+        }
+
+        function atacar(d) {
+            if (turno !== 1) return;
+            tocarSom();
+
+            let dano = Math.floor(d * vantagem(p.tipo, e.tipo));
+            vidaE -= dano;
+
+            document.getElementById('enemy').classList.add("shake");
+            setTimeout(() => document.getElementById('enemy').classList.remove("shake"), 300);
+
+            document.getElementById('msg').innerText = `Você usou ataque de ${dano} dano!`;
+            atualizar();
+
+            if (vidaE <= 0) return fim("🏆 VITÓRIA EXTRAORDINÁRIA!");
+            
+            travarBotoes(true);
+            turno = 2;
+            setTimeout(turnoInimigo, 1200);
+        }
+
+        function curar() {
+            if (turno !== 1 || potions <= 0) return;
+            vidaP = Math.min(500, vidaP + 150);
+            potions--;
+            document.getElementById('msg').innerText = "🧪 Você recuperou energia!";
+            atualizar();
+            mostrarAtaques();
+            turno = 2;
+            setTimeout(turnoInimigo, 1200);
+        }
+
+        function turnoInimigo() {
+            if (vidaE <= 0) return;
+
+            if (vidaE < 120 && potionsEnemy > 0) {
+                vidaE += 120;
+                potionsEnemy--;
+                document.getElementById('msg').innerText = "🤖 Inimigo usou Cura!";
+            } else {
+                tocarSom();
+                let dano = Math.floor(60 * vantagem(e.tipo, p.tipo));
+                vidaP -= dano;
+                document.getElementById('player').classList.add("shake");
+                setTimeout(() => document.getElementById('player').classList.remove("shake"), 300);
+                document.getElementById('msg').innerText = `O Inimigo causou ${dano} de dano!`;
+            }
+
+            atualizar();
+            if (vidaP <= 0) return fim("💀 VOCÊ FOI DERROTADO!");
+
+            setTimeout(() => {
+                turno = 1;
+                travarBotoes(false);
+                document.getElementById('msg').innerText = "Sua vez! O que fará?";
+                mostrarAtaques();
+            }, 1000);
+        }
+
+        function travarBotoes(state) {
+            const btns = document.querySelectorAll('#ataques button');
+            btns.forEach(b => b.disabled = state);
+        }
+
+        function tocarSom() {
+            const s = document.getElementById('atkSound');
+            s.currentTime = 0;
+            s.play();
+        }
+
+        function fim(t) {
+            document.getElementById('msg').innerText = t;
+            document.getElementById('ataques').innerHTML = `<button onclick="location.reload()" style="grid-column: span 4;">🔄 JOGAR NOVAMENTE</button>`;
+        }
+    </script>
+</body>
+</html>
