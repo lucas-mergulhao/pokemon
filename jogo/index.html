@@ -4,83 +4,75 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pokémon ULTRA - Elite Journey</title>
+    <link rel="shortcut icon" href="favicon/pok-mon-go-logo-png-30.png" type="image/x-icon">
     <style>
-        :root { --sky: #4facfe; --grass-l: #76b852; --grass-d: #2d5a27; --ui: #fdfce0; --flash: rgba(255,255,255,0); }
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #000; color: white; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        :root { 
+            --sky: #4facfe; --grass-l: #76b852; --grass-d: #2d5a27; 
+            --ui: #fdfce0; --flash: rgba(255,255,255,0); 
+            --accent: #ffeb3b;
+        }
+        body { margin: 0; font-family: 'Segoe UI', Roboto, sans-serif; background: #000; color: white; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        
         body::after { content: ""; position: fixed; inset: 0; background: var(--flash); pointer-events: none; z-index: 999; transition: 0.1s; }
 
         .bg { position: fixed; inset: 0; background: linear-gradient(to bottom, var(--sky) 0%, #00f2fe 50%, var(--grass-l) 50%, var(--grass-d) 100%); z-index: -1; transition: 1s; }
         .tempestade { filter: brightness(0.4) saturate(1.5) hue-rotate(200deg); }
+        .gelo { filter: hue-rotate(180deg) brightness(1.2); }
         
-        /* Efeito de Chuva */
         #rain { position: fixed; inset: 0; pointer-events: none; z-index: 20; display: none; }
         .drop { position: absolute; background: rgba(255,255,255,0.4); width: 2px; height: 15px; animation: fall linear infinite; }
         @keyframes fall { to { transform: translateY(100vh) translateX(50px); } }
 
-        /* Animação de Boss */
         #boss-intro { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; animation: fadeIn 0.5s; }
-        .boss-img { width: 250px; filter: drop-shadow(0 0 30px #ffeb3b); animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        .boss-text { font-size: 40px; color: #ffeb3b; font-weight: 900; text-shadow: 0 0 20px red; margin-top: 20px; text-transform: uppercase; letter-spacing: 5px; }
-        
-        @keyframes zoomIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1.2); opacity: 1; } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .boss-img { width: 250px; filter: drop-shadow(0 0 30px var(--accent)); animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .boss-text { font-size: 40px; color: var(--accent); font-weight: 900; text-shadow: 0 0 20px red; margin-top: 20px; text-transform: uppercase; letter-spacing: 5px; }
 
         .ground { position: absolute; bottom: 0; width: 100%; height: 50%; background: linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(to bottom, var(--grass-l), var(--grass-d)); background-size: 60px 60px; transform: perspective(500px) rotateX(65deg); transform-origin: top; animation: move 3s linear infinite; }
         @keyframes move { from { background-position: 0 0; } to { background-position: 0 60px; } }
 
-        #start-screen, #menu, #level-up, #end-screen, #game { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        #start-screen { display: flex; background: rgba(0,0,0,0.8); z-index: 300; }
-        .logo-ultra { font-size: 60px; font-weight: 900; color: #ffeb3b; text-shadow: 4px 4px #e91e63, 8px 8px #000; margin-bottom: 20px; animation: float 3s ease-in-out infinite; }
+        #start-screen, #menu, #level-selection, #level-up, #end-screen, #game { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        #start-screen { display: flex; background: radial-gradient(circle, #222, #000); z-index: 300; }
+        .logo-ultra { font-size: 60px; font-weight: 900; color: #ffeb3b; text-shadow: 4px 4px #e91e63, 8px 8px #000; margin-bottom: 20px; animation: float 3s ease-in-out infinite; line-height: 0.9; }
         @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
 
-        #menu { background: rgba(0,0,0,0.85); z-index: 100; }
-        #level-up { background: rgba(0,0,0,0.9); z-index: 90; }
-        #end-screen { background: rgba(0,0,0,0.95); z-index: 200; }
-        #game { z-index: 50; }
-
         .scene { width: 100%; flex: 1; position: relative; overflow: hidden; }
-        #player { position: absolute; bottom: 8%; left: 8%; width: 42vw; max-width: 280px; z-index: 10; transition: 0.4s; filter: drop-shadow(0 15px 10px rgba(0,0,0,0.4)); }
-        #enemy { position: absolute; bottom: 35%; right: 10%; width: 35vw; max-width: 200px; z-index: 5; transition: 0.5s; filter: drop-shadow(0 10px 8px rgba(0,0,0,0.4)); transform: scale(0.9); }
+        #player { position: absolute; bottom: 12%; left: 10%; width: 45vw; max-width: 300px; z-index: 10; transition: 0.3s; filter: drop-shadow(0 20px 10px rgba(0,0,0,0.3)); }
+        #enemy { position: absolute; bottom: 38%; right: 10%; width: 38vw; max-width: 220px; z-index: 5; transition: 0.5s; filter: drop-shadow(0 15px 8px rgba(0,0,0,0.3)); transform: scale(0.9); }
 
-        .hp-critical { background: #f44336 !important; box-shadow: 0 0 10px #f44336; }
-        .blink-critical { animation: blink 0.5s infinite; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; filter: brightness(2) drop-shadow(0 0 15px red); } }
+        .hud { position: absolute; width: 170px; background: var(--ui); padding: 10px; border: 3px solid #333; color: #111; box-shadow: 4px 4px 0 #000; border-radius: 0 15px 0 15px; }
+        #h-e { top: 50px; left: 20px; }
+        #h-p { bottom: 200px; right: 20px; }
+        .hp-bar-bg { background:#444; height: 12px; margin-top: 6px; border: 1px solid #000; border-radius: 6px; overflow: hidden; }
+        .hp { height: 100%; background: #4caf50; transition: 0.4s; }
+        .hp-low { background: #f44336 !important; }
+
+        .panel { width: 100%; background: #222; border-top: 5px solid #000; padding: 12px; display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; min-height: 185px; box-sizing: border-box; }
+        #msg-box { background: #fff; border: 3px solid #333; color: #000; padding: 12px; font-weight: bold; font-size: 14px; border-radius: 8px; text-align: left; box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1); overflow-y: auto; }
+        #atks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         
-        #pokeball { position: absolute; width: 40px; height: 40px; display: none; z-index: 100; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .particle { position: absolute; pointer-events: none; border-radius: 2px; z-index: 100; animation: particleAnim 0.6s ease-out forwards; }
+        .btn { border: 3px solid #000; font-family: inherit; font-weight: 800; cursor: pointer; text-transform: uppercase; font-size: 11px; border-radius: 8px; padding: 8px; box-shadow: 3px 3px 0 #000; transition: 0.1s; display: flex; align-items: center; justify-content: center; }
+        .btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #000; }
+        .btn:disabled { filter: grayscale(1); opacity: 0.6; pointer-events: none; }
+        
+        #xp-container { position:fixed; top:0; width:100%; height:12px; background:#111; z-index:1000; }
+        #xp-bar { height:100%; width:0%; background: linear-gradient(90deg, #ffeb3b, #fbc02d); transition:1s; }
+
+        .dmg-num { position: absolute; font-size: 40px; font-weight: 900; color: #fff; text-shadow: 3px 3px 0 #000; animation: floatUp 0.8s forwards; z-index: 1000; pointer-events: none; }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-100px) scale(1.5); } }
+
+        .particle { position: absolute; pointer-events: none; border-radius: 50%; z-index: 100; animation: particleAnim 0.6s ease-out forwards; }
         @keyframes particleAnim { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; } }
 
-        .faint { transform: translateY(300px) rotate(20deg) !important; opacity: 0; }
-        .shiny { filter: drop-shadow(0 0 15px gold) brightness(1.1) !important; }
-        .boss-aura { filter: drop-shadow(0 0 20px #ffeb3b) contrast(1.2) !important; }
+        .faint { transform: translateY(300px) rotate(45deg) scale(0) !important; opacity: 0; transition: 1s !important; }
+        .shiny { filter: drop-shadow(0 0 15px gold) brightness(1.2) !important; }
+        .boss-aura { filter: drop-shadow(0 0 20px red) contrast(1.2) !important; }
         
-        .dmg-num { position: absolute; font-size: 35px; font-weight: 900; color: #fff; text-shadow: 2px 2px 0 #000; animation: floatUp 0.8s forwards; z-index: 1000; pointer-events: none;}
-        .crit-text { color: #ffeb3b; font-style: italic; font-size: 20px; }
-        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-120px); } }
-
-        .hud { position: absolute; width: 160px; background: var(--ui); padding: 8px; border: 3px solid #333; color: #111; box-shadow: 4px 4px 0 #000; border-radius: 0 15px 0 15px; }
-        #h-e { top: 45px; left: 15px; }
-        #h-p { bottom: 190px; right: 15px; }
-        .hp-bar-bg { background:#444; height: 10px; margin-top: 4px; border: 1px solid #000; border-radius: 5px; overflow: hidden; }
-        .hp { height: 100%; background: #4caf50; transition: 0.5s width; }
-
-        .panel { width: 100%; background: #222; border-top: 4px solid #000; padding: 10px; display: grid; grid-template-columns: 1fr 1.3fr; gap: 8px; height: 180px; box-sizing: border-box; }
-        #msg-box { background: #fff; border: 3px solid #333; color: #000; padding: 8px; font-weight: bold; font-size: 13px; border-radius: 8px; text-align: left; overflow-y: auto; line-height: 1.2; }
-        #atks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; color: black; border: 6px solid #333; width: 85%; max-width: 350px; box-shadow: 10px 10px 0 rgba(0,0,0,0.5); overflow-y: auto; max-height: 80vh; }
+        .shake { animation: screenShake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes screenShake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(4px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-6px, 0, 0); } 40%, 60% { transform: translate3d(6px, 0, 0); } }
         
-        .btn { border: 3px solid #000; font-family: inherit; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 10px; border-radius: 6px; padding: 6px; box-shadow: 2px 2px 0 #000; transition: 0.1s; }
-        .btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 #000; }
-        .btn:disabled { filter: grayscale(1); opacity: 0.5; cursor: not-allowed; }
-        .b-u { background: linear-gradient(45deg, #f093fb, #f5576c); color: white; grid-column: span 2; font-size: 12px; }
-        
-        .modal-content { background: white; padding: 25px; border-radius: 20px; color: black; border: 6px solid #333; width: 85%; max-width: 350px; }
-        .shake { animation: shake 0.3s; }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
-        .rolling { animation: rotate 0.5s infinite linear; }
-        @keyframes rotate { from { transform: rotate(0); } to { transform: rotate(360deg); } }
-
-        #xp-container { position:fixed; top:0; width:100%; height:15px; background:#111; z-index:1000; border-bottom: 2px solid #000; }
-        #xp-bar { height:100%; width:0%; background:#ffeb3b; transition:1s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: inset 0 -4px rgba(0,0,0,0.2); }
+        .world-locked { opacity: 0.5; filter: grayscale(1); pointer-events: none; position: relative; }
+        .world-locked::after { content: "🔒 BLOQUEADO"; position: absolute; top: 10px; right: 10px; font-size: 10px; background: #000; color: #fff; padding: 2px 5px; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -89,61 +81,68 @@
     <div id="rain"></div>
 
     <div id="boss-intro">
-        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" class="boss-img">
-        <div class="boss-text">FINAL BOSS</div>
-        <div style="color: white; font-weight: bold; margin-top: 10px;">PIKACHU LENDÁRIO</div>
+        <img src="" id="intro-boss-img" class="boss-img">
+        <div class="boss-text" id="intro-boss-title">LENDÁRIO SURGIU</div>
+        <div id="intro-boss-name" style="color: white; font-weight: bold; margin-top: 10px; font-size: 24px;"></div>
     </div>
     
     <div id="start-screen">
-        <h1 class="logo-ultra">POKÉMON<br>ULTRA</h1>
-        <button onclick="goToSelection()" class="btn" style="background:#4caf50; color:white; font-size:20px; padding:15px 40px; border-radius:50px;">INICIAR JORNADA</button>
+        <h1 class="logo-ultra">POKÉMON<br><span style="color:#e91e63">ULTRA</span></h1>
+        <button onclick="goToSelection()" class="btn" style="background:#4caf50; color:white; font-size:22px; padding:20px 50px; border-radius:50px;">JOGAR AGORA</button>
+        <button onclick="resetaJogo()" style="margin-top:20px; color:#aaa; background:none; border:none; text-decoration:underline; font-size:10px">RECOMEÇAR JORNADA</button>
     </div>
 
     <div id="menu">
         <div class="modal-content">
-            <h2 style="color:#e91e63; margin-top:0">ESCOLHA SEU COMPANHEIRO</h2>
-            <div id="team-selection" style="display: flex; flex-wrap: wrap; justify-content: center;"></div>
+            <h2 style="color:#e91e63; margin:0 0 15px 0">SUA EQUIPE</h2>
+            <div id="team-selection" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;"></div>
+        </div>
+    </div>
+
+    <div id="level-selection">
+        <div class="modal-content">
+            <h2 style="color:#2196f3; margin:0 0 15px 0">DESTINO DA JORNADA</h2>
+            <div id="world-list"></div>
         </div>
     </div>
 
     <div id="level-up">
-        <h2 style="color:#ffeb3b; font-size: 32px; text-shadow: 2px 2px #000;">LEVEL UP!</h2>
-        <p>Escolha um bônus para sua equipe:</p>
-        <button onclick="chooseBonus('atk')" class="btn" style="background:#ff5252; color:white; width:260px; margin:8px; font-size: 14px;">⚔️ FORÇA BRUTA (+25% ATK)</button>
-        <button onclick="chooseBonus('def')" class="btn" style="background:#ffd740; width:260px; margin:8px; font-size: 14px;">🛡️ ARMADURA (+15% DEF)</button>
-        <button onclick="chooseBonus('pot')" class="btn" style="background:#80d8ff; width:260px; margin:8px; font-size: 14px;">🧪 ESTOQUE (+1 POÇÃO)</button>
+        <h2 style="color:#ffeb3b; font-size: 40px; text-shadow: 3px 3px #000; margin-bottom: 5px;">LEVEL UP!</h2>
+        <p id="lvl-up-text" style="font-weight: bold; margin-bottom: 20px;">SEU POKÉMON FICOU MAIS FORTE!</p>
+        <button onclick="chooseBonus('atk')" class="btn" style="background:#ff5252; color:white; width:280px; margin:10px; font-size: 15px;">⚔️ TREINO DE ATAQUE (+25% ATK)</button>
+        <button onclick="chooseBonus('def')" class="btn" style="background:#ffd740; width:280px; margin:10px; font-size: 15px;">🛡️ DEFESA ABSOLUTA (+15% DEF)</button>
+        <button onclick="chooseBonus('pot')" class="btn" style="background:#80d8ff; width:280px; margin:10px; font-size: 15px;">🧪 MOCHILA AMPLIADA (+1 POÇÃO)</button>
     </div>
 
     <div id="end-screen">
         <div class="modal-content">
-            <h1 id="end-title">FIM DE JOGO</h1>
-            <p id="end-msg"></p>
-            <button onclick="location.reload()" class="btn" style="background:#ffeb3b; width:100%; padding:15px; font-size:16px">RECOMEÇAR</button>
+            <h1 id="end-title" style="font-size: 35px; margin: 0;">FIM</h1>
+            <p id="end-msg" style="font-size: 18px; margin: 20px 0;"></p>
+            <button onclick="voltarAoInicio()" class="btn" style="background:#ffeb3b; width:100%; padding:15px; font-size:18px; margin-top:10px">MENU PRINCIPAL</button>
         </div>
     </div>
 
     <div id="game">
         <div class="scene" id="scene">
-            <img id="pokeball" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
             <img id="enemy" src="">
             <img id="player" src="">
             
             <div id="h-e" class="hud">
-                <strong><span id="e-n"></span></strong> <span id="e-lv" style="font-size:10px; float:right"></span>
+                <strong><span id="e-n"></span></strong> <span id="e-lv" style="font-size:11px; float:right; background:#333; color:white; padding:1px 4px; border-radius:4px"></span>
                 <div class="hp-bar-bg"><div id="e-hp" class="hp"></div></div>
             </div>
             
             <div id="h-p" class="hud">
-                <strong><span id="p-n"></span></strong>
+                <strong><span id="p-n"></span></strong> <span id="p-lv-display" style="font-size:11px; float:right; background:#e91e63; color:white; padding:1px 4px; border-radius:4px"></span>
                 <div class="hp-bar-bg"><div id="p-hp" class="hp"></div></div>
-                <div style="background:#444;height:5px;margin-top:4px;border-radius:3px; border:1px solid #000">
-                    <div id="p-bt-fill" style="height:100%; background:#ffeb3b; width:0%; transition:0.3s; border-radius:3px"></div>
+                <div style="background:#444;height:6px;margin-top:6px;border-radius:3px; border:1px solid #000; position: relative;">
+                    <div id="p-bt-fill" style="height:100%; background:#ffeb3b; width:0%; transition:0.3s; border-radius:3px;"></div>
                 </div>
             </div>
         </div>
         
         <div class="panel">
-            <div id="msg-box"><div id="msg-inner">...</div></div>
+            <div id="msg-box"><div id="msg-inner">Prepare-se!</div></div>
             <div id="atks"></div>
         </div>
     </div>
@@ -152,7 +151,53 @@
         const audio = new (window.AudioContext || window.webkitAudioContext)();
         let bgmNode = null;
 
-        const typeColors = { fogo: "#ff9800", agua: "#2196f3", planta: "#4caf50", eletrico: "#fdd835", normal: "#9e9e9e" };
+        const typeColors = { fogo: "#ff5722", agua: "#03a9f4", planta: "#4caf50", eletrico: "#ffeb3b", normal: "#9e9e9e", psiquico: "#e91e63", gelo: "#80deea", terra: "#795548" };
+        const typeChart = { fogo:{planta:2, agua:0.5, gelo:2}, agua:{fogo:2, planta:0.5, terra:2}, planta:{agua:2, fogo:0.5, terra:2}, eletrico:{agua:2, planta:0.5}, psiquico:{normal:1}, gelo:{planta:2, fogo:0.5}, terra:{eletrico:2, fogo:2} };
+
+        const evolucoes = {
+            1: { lvl: 16, into: 2, n: "Ivysaur", moves: ["Investida", "Folha Navalha", "Raio Solar"] },
+            2: { lvl: 36, into: 3, n: "Venusaur", moves: ["Pancada", "Folha Navalha", "Terremoto"] },
+            4: { lvl: 16, into: 5, n: "Charmeleon", moves: ["Arranhão", "Brasa", "Lança-Chamas"] },
+            5: { lvl: 36, into: 6, n: "Charizard", moves: ["Garra", "Lança-Chamas", "Explosão de Fogo"] },
+            7: { lvl: 16, into: 8, n: "Wartortle", moves: ["Pancada", "Pistola d'Água", "Hidro Bomba"] },
+            8: { lvl: 36, into: 9, n: "Blastoise", moves: ["Mordida", "Hidro Bomba", "Canhão d'Água"] },
+            16: { lvl: 18, into: 17, n: "Pidgeotto", moves: ["Bicada", "Furacão", "Ataque de Asa"] },
+            17: { lvl: 36, into: 18, n: "Pidgeot", moves: ["Furacão", "Ataque de Asa", "Tornado"] },
+            19: { lvl: 20, into: 20, n: "Raticate", moves: ["Mordida", "Super Presa", "Hiper Raio"] },
+            43: { lvl: 21, into: 44, n: "Gloom", moves: ["Ácido", "Pétalas", "Pó de Sono"] },
+            60: { lvl: 25, into: 61, n: "Poliwhirl", moves: ["Tapa", "Hidro Jato", "Submissão"] }
+        };
+
+        let mundosLiberados = JSON.parse(localStorage.getItem('mundos_liberados')) || [0];
+
+        const mundos = [
+            { nome: "Vale do Trovão", boss: { id: 25, n: "Pikachu", t: "eletrico", moves: ["Choque", "Relâmpago", "Trovão"] }, bg: "linear-gradient(to bottom, #4facfe 0%, #00f2fe 50%, #76b852 50%, #2d5a27 100%)", msgIntro: "O CÉU ESCURECE... O PIKACHU LENDÁRIO APARECEU!" },
+            { nome: "Cratera de Fogo", boss: { id: 6, n: "Charizard", t: "fogo", moves: ["Garra", "Brasa", "Lança-Chamas"] }, bg: "linear-gradient(to bottom, #ff4e50 0%, #f9d423 50%, #434343 50%, #000000 100%)", msgIntro: "O CHÃO ESTÁ DERRETENDO! CHARIZARD SURGE!" },
+            { nome: "Laboratório Mew", boss: { id: 150, n: "Mewtwo", t: "psiquico", moves: ["Confusão", "Corte Psíquico", "Psystrike"] }, bg: "linear-gradient(to bottom, #6a11cb 0%, #2575fc 50%, #000000 50%, #333 100%)", msgIntro: "UMA ENERGIA ESMAGADORA... MEWTWO ESTÁ AQUI!" },
+            { nome: "Templo Congelado", boss: { id: 144, n: "Articuno", t: "gelo", moves: ["Gelo", "Nevasca", "Frio Extremo"] }, bg: "linear-gradient(to bottom, #e0f7fa 0%, #80deea 50%, #006064 50%, #000 100%)", msgIntro: "O AR CONGELOU INSTANTANEAMENTE! ARTICUNO!" },
+            { nome: "Caverna Terrestre", boss: { id: 383, n: "Groudon", t: "terra", moves: ["Tiro de Lama", "Terremoto", "Lâminas do Abismo"] }, bg: "linear-gradient(to bottom, #f44336 0%, #795548 50%, #3e2723 50%, #000 100%)", msgIntro: "O MUNDO ESTREMECE... GROUDON DESPERTOU!" }
+        ];
+
+        let pks = JSON.parse(localStorage.getItem('pks_save')) || [
+            { id:1, n: "Bulbasaur", t: "planta", moves: ["Investida", "Folha Navalha", "Raio Solar"], lvl: 1, shiny: false },
+            { id:4, n: "Charmander", t: "fogo", moves: ["Arranhão", "Brasa", "Lança-Chamas"], lvl: 1, shiny: false },
+            { id:7, n: "Squirtle", t: "agua", moves: ["Pancada", "Pistola d'Água", "Hidro Bomba"], lvl: 1, shiny: false }
+        ];
+
+        function salvaProgresso() {
+            localStorage.setItem('pks_save', JSON.stringify(pks));
+            localStorage.setItem('mundos_liberados', JSON.stringify(mundosLiberados));
+        }
+
+        function resetaJogo() {
+            if(confirm("Deseja realmente apagar sua equipe e recomeçar?")) {
+                localStorage.removeItem('pks_save');
+                localStorage.removeItem('mundos_liberados');
+                location.reload();
+            }
+        }
+
+        let p, e, hpP=500, hpE=500, btP=0, turn=1, potsP=2, maxPots=2, cdP={f:0, m:0}, phase=1, eMult=1, pAtkMult=1, pDefMult=1, mundoAtual=0, isShinyE=false;
 
         function playSfx(freq, type, duration, vol=0.1) {
             try {
@@ -160,35 +205,17 @@
                 osc.type = type; osc.frequency.setValueAtTime(freq, audio.currentTime);
                 g.gain.setValueAtTime(vol, audio.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audio.currentTime + duration);
                 osc.connect(g); g.connect(audio.destination); osc.start(); osc.stop(audio.currentTime + duration);
-            } catch(e) {}
+            } catch(err) {}
         }
 
-        function playSparkSfx() {
-            for(let i=0; i<5; i++) setTimeout(() => playSfx(Math.random() * 1000 + 2000, 'sawtooth', 0.05, 0.02), i * 40);
-        }
+        function triggerFlash() { document.documentElement.style.setProperty('--flash', "rgba(255,255,255,0.7)"); setTimeout(()=>document.documentElement.style.setProperty('--flash','transparent'), 150); }
 
-        function playThunderSfx() {
-            playSfx(100, 'sawtooth', 0.8, 0.2);
-            triggerFlash();
-        }
-
-        function initRain() {
-            const rain = document.getElementById('rain');
-            rain.innerHTML = '';
-            for(let i=0; i<80; i++) {
-                const drop = document.createElement('div');
-                drop.className = 'drop';
-                drop.style.left = Math.random() * 100 + 'vw';
-                drop.style.animationDuration = (0.5 + Math.random() * 0.3) + 's';
-                drop.style.animationDelay = Math.random() * 2 + 's';
-                rain.appendChild(drop);
-            }
-        }
+        function msg(t) { document.getElementById('msg-inner').innerText = t; }
 
         function playBGM(isBoss = false) {
             if (bgmNode) clearTimeout(bgmNode);
-            const tempo = isBoss ? 0.12 : 0.18;
-            const notes = isBoss ? [200, 220, 200, 250, 180] : [150, 180, 200, 150, 220];
+            const tempo = isBoss ? 0.13 : 0.2;
+            const notes = isBoss ? [200, 240, 200, 260, 180, 300] : [150, 180, 200, 150, 220];
             let i = 0;
             function playNote() {
                 const osc = audio.createOscillator(); const g = audio.createGain();
@@ -201,150 +228,200 @@
         }
 
         function createParticles(type, x, y) {
-            const colors = { fogo: ['#ff4500', '#ff8c00', '#fff'], agua: ['#00bfff', '#add8e6', '#fff'], planta: ['#32cd32', '#90ee90', '#fff'], eletrico: ['#ffff00', '#ffffff', '#ffeb3b'] };
+            const colors = { fogo: ['#ff4500', '#ff8c00'], agua: ['#00bfff', '#add8e6'], planta: ['#32cd32', '#006400'], eletrico: ['#ffff00', '#ffa500'], psiquico: ['#e91e63', '#9c27b0'], gelo: ['#b2ebf2', '#fff'], terra: ['#8d6e63', '#4e342e'] };
             const typeColor = colors[type] || ['#fff', '#ccc'];
-            for(let i=0; i<15; i++) {
-                const p = document.createElement('div'); p.className = 'particle';
+            for(let i=0; i<12; i++) {
+                const pt = document.createElement('div'); pt.className = 'particle';
                 const size = Math.random() * 8 + 4;
-                p.style.width = size + 'px'; p.style.height = size + 'px';
-                p.style.background = typeColor[Math.floor(Math.random() * typeColor.length)];
-                p.style.left = x + 'px'; p.style.top = y + 'px';
-                p.style.setProperty('--dx', (Math.random() - 0.5) * 150 + 'px');
-                p.style.setProperty('--dy', (Math.random() - 0.5) * 150 + 'px');
-                document.getElementById('scene').appendChild(p);
-                setTimeout(() => p.remove(), 600);
+                pt.style.width = size + 'px'; pt.style.height = size + 'px';
+                pt.style.background = typeColor[Math.floor(Math.random() * typeColor.length)];
+                pt.style.left = x + 'px'; pt.style.top = y + 'px';
+                pt.style.setProperty('--dx', (Math.random() - 0.5) * 150 + 'px');
+                pt.style.setProperty('--dy', (Math.random() - 0.5) * 150 + 'px');
+                document.getElementById('scene').appendChild(pt);
+                setTimeout(() => pt.remove(), 600);
             }
         }
-
-        const pks = [
-            { id:1, n: "Bulbasaur", t: "planta", moves: ["Investida", "Folha Navalha", "Raio Solar"], evos:[2, 3] },
-            { id:4, n: "Charmander", t: "fogo", moves: ["Arranhão", "Brasa", "Lança-Chamas"], evos:[5, 6] },
-            { id:7, n: "Squirtle", t: "agua", moves: ["Pancada", "Pistola d'Água", "Hidro Bomba"], evos:[8, 9] }
-        ];
-
-        const PIKACHU_DATA = { id:25, n: "Pikachu", t: "eletrico", moves: ["Choque", "Relâmpago", "Trovão"], evos:[26, 26] };
-        const typeChart = { fogo:{planta:2, agua:0.5}, agua:{fogo:2, planta:0.5}, planta:{agua:2, fogo:0.5}, eletrico:{agua:2} };
-
-        let p, e, hpP=500, hpE=500, btP=0, turn=1, potsP=2, maxPots=2, cdP={f:0, m:0}, phase=1, eMult=1, pAtkMult=1, pDefMult=1;
-        let isShinyE=false;
 
         function goToSelection() {
             if (audio.state === 'suspended') audio.resume();
             document.getElementById('start-screen').style.display = "none";
             document.getElementById('menu').style.display = "flex";
             updateMenu();
-            playSfx(400, 'sine', 0.2);
         }
 
         function updateMenu() {
             const container = document.getElementById('team-selection');
             container.innerHTML = "";
-            let menuList = [...pks];
-            if(localStorage.getItem('pikachu_captured') === 'true') menuList.push(PIKACHU_DATA);
-
-            menuList.forEach((poke) => {
+            pks.forEach((poke, index) => {
                 const b = document.createElement('button');
-                b.className = "btn";
-                b.style.margin = "8px";
-                b.style.padding = "10px";
-                b.style.background = typeColors[poke.t] || "#eee";
-                b.style.color = poke.t === 'eletrico' ? 'black' : 'white';
-                b.innerHTML = `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.id}.png" style="width:50px"><br>${poke.n}`;
-                b.onclick = () => start(poke);
+                b.className = "btn"; b.style.width = "100px"; b.style.minHeight = "140px"; b.style.flexDirection = "column";
+                b.style.background = typeColors[poke.t];
+                b.style.color = "white";
+                b.innerHTML = `<img src="${getPokeImg(poke.id, false, poke.shiny)}" style="width:60px; filter: drop-shadow(0 5px 5px rgba(0,0,0,0.5))">
+                               <div style="font-size:10px; font-weight:900">${poke.n}${poke.shiny?' ✨':''}</div>
+                               <div style="font-size:9px; background:rgba(0,0,0,0.3); padding:2px 5px; border-radius:10px; margin-top:5px">LVL ${poke.lvl || 1}</div>`;
+                b.onclick = () => { 
+                    p = JSON.parse(JSON.stringify(poke));
+                    p.originalIndex = index; 
+                    showLevelSelection(); 
+                };
                 container.appendChild(b);
             });
         }
 
+        function showLevelSelection() {
+            document.getElementById('menu').style.display = "none";
+            document.getElementById('level-selection').style.display = "flex";
+            const worldList = document.getElementById('world-list');
+            worldList.innerHTML = "";
+            mundos.forEach((m, index) => {
+                const div = document.createElement('div');
+                const liberado = mundosLiberados.includes(index);
+                
+                div.className = liberado ? "" : "world-locked";
+                div.style.background = "#eee"; div.style.margin = "10px 0"; div.style.padding = "15px"; div.style.borderRadius = "12px"; div.style.cursor = "pointer"; div.style.border = "3px solid #333"; div.style.color="#000";
+                
+                const dif = index === 0 ? "Fácil" : index < 3 ? "Médio" : "Difícil";
+                
+                div.innerHTML = `<strong>${m.nome}</strong><br><small>Boss Final: ${m.boss.n}</small><br><span style="font-size:9px; color:red">Dificuldade: ${dif}</span>`;
+                if(liberado) div.onclick = () => start(index);
+                worldList.appendChild(div);
+            });
+        }
+
         function getPokeImg(id, back=false, shiny=false) {
-            if(back) return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/${id}.png`;
+            if(back) return shiny ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/shiny/${id}.png` : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/${id}.png`;
             return shiny ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/${id}.png` : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
         }
 
-        function start(pokeObj) {
-            p = JSON.parse(JSON.stringify(pokeObj)); 
-            hpP=500; phase=1; eMult=1; maxPots=2; potsP=2; pAtkMult=1; pDefMult=1; btP=0;
-            document.getElementById('menu').style.display="none";
+        function start(worldIdx) {
+            mundoAtual = worldIdx;
+            hpP=500; phase=1; eMult=1; maxPots=2; potsP=2; pAtkMult=1 + (p.lvl * 0.1); pDefMult=1; btP=0;
+            document.getElementById('level-selection').style.display="none";
             document.getElementById('game').style.display="flex";
             playBGM();
             nextEnemy();
         }
 
         async function nextEnemy() {
-            if(phase > 5) return showEnd(true, "Parabéns! Você se tornou o Campeão Ultra!");
-            turn = 1; cdP = {f:0, m:0}; potsP = maxPots; hpE = 500;
-            
-            if(p.id !== 25 && p.id !== 26) {
-                if(phase === 3) evolve(0);
-                if(phase === 5) evolve(1);
-            }
+            hpE = 500; turn = 1; cdP = {f:0, m:0}; potsP = maxPots;
+            const enemyImg = document.getElementById('enemy');
+            enemyImg.classList.remove('faint');
+            document.getElementById('rain').style.display = 'none';
+            document.getElementById('main-bg').className = "bg";
 
             if(phase === 5) {
-                // Intro de Boss
+                const bossData = mundos[mundoAtual].boss;
+                document.getElementById('intro-boss-img').src = getPokeImg(bossData.id);
+                document.getElementById('intro-boss-name').innerText = bossData.n;
                 document.getElementById('boss-intro').style.display = 'flex';
-                playThunderSfx();
-                await new Promise(r => setTimeout(r, 3000));
-                document.getElementById('boss-intro').style.display = 'none';
-                
-                // Clima de Chuva
-                document.getElementById('main-bg').classList.add('tempestade');
-                document.getElementById('rain').style.display = 'block';
-                initRain();
-                playBGM(true);
-                
-                e = PIKACHU_DATA; eMult = 3.0; isShinyE = true;
-                msg("⚠️ O CÉU ESCURECE... O PIKACHU LENDÁRIO DESCEU!");
-            } else {
-                document.getElementById('main-bg').classList.remove('tempestade');
-                document.getElementById('rain').style.display = 'none';
-                e = pks[Math.floor(Math.random()*3)];
-                eMult = 1 + (phase * 0.4); isShinyE = Math.random() < 0.1;
-                msg(`Fase ${phase}: Um ${e.n} apareceu!`);
-            }
-
-            document.getElementById('player').src = getPokeImg(p.id, true);
-            document.getElementById('enemy').src = getPokeImg(e.id, false, isShinyE);
-            document.getElementById('enemy').classList.remove('faint');
-            document.getElementById('p-n').innerText = p.n;
-            document.getElementById('e-n').innerText = e.n + (isShinyE ? " ✨" : "");
-            document.getElementById('e-lv').innerText = "Lv." + (phase * 20);
-            render();
-        }
-
-        function evolve(stage) {
-            const original = pks.find(x => x.n === p.n || x.evos.includes(p.id));
-            if(original) {
-                p.id = original.evos[stage];
-                p.n = (stage === 0) ? "Evolução Intermediária" : "Evolução Final"; // Simples para exemplo
-                playSfx(600, 'square', 0.5);
+                playSfx(100, 'sawtooth', 1.0, 0.3);
                 triggerFlash();
+                await new Promise(r => setTimeout(r, 2000));
+                document.getElementById('boss-intro').style.display = 'none';
+                document.getElementById('main-bg').style.background = mundos[mundoAtual].bg;
+                
+                if(mundoAtual === 3) document.getElementById('main-bg').classList.add('gelo');
+                else {
+                    document.getElementById('main-bg').classList.add('tempestade');
+                    document.getElementById('rain').style.display = 'block';
+                    initRain();
+                }
+                
+                playBGM(true);
+                e = JSON.parse(JSON.stringify(bossData)); 
+                eMult = 3.8 + (mundoAtual * 1.5); 
+                isShinyE = true;
+                msg("⚠️ " + mundos[mundoAtual].msgIntro);
+            } else {
+                const wildPool = [
+                    { id:16, n: "Pidgey", t: "normal", moves: ["Bicada", "Vento", "Furacão"] },
+                    { id:19, n: "Rattata", t: "normal", moves: ["Investida", "Mordida", "Hiper Presa"] },
+                    { id:43, n: "Oddish", t: "planta", moves: ["Absorver", "Ácido", "Pétalas"] },
+                    { id:60, n: "Poliwag", t: "agua", moves: ["Bolhas", "Tapa", "Hidro Jato"] },
+                    { id:23, n: "Ekans", t: "psiquico", moves: ["Mordida", "Picada", "Glaive"] },
+                    { id:129, n: "Magikarp", t: "agua", moves: ["Splash", "Investida", "Flail"] }
+                ];
+                e = JSON.parse(JSON.stringify(wildPool[Math.floor(Math.random()*wildPool.length)]));
+                eMult = (1.1 + (phase * 0.4)) + (mundoAtual * 0.8);
+                isShinyE = Math.random() < 0.10;
+                msg(`Fase ${phase}: Um ${e.n} selvagem apareceu!`);
             }
-        }
 
-        function render() {
-            const area = document.getElementById('atks');
-            const pColor = typeColors[p.t] || "#555";
-            area.innerHTML = `
-                <button class="btn" style="background:#d32f2f;color:#fff" onclick="atk(120,'f')" ${cdP.f>0||turn!==1?'disabled':''}>${p.moves[2]} ${cdP.f>0?`(${cdP.f})`:''}</button>
-                <button class="btn" style="background:#fbc02d" onclick="atk(75,'m')" ${cdP.m>0||turn!==1?'disabled':''}>${p.moves[1]} ${cdP.m>0?`(${cdP.m})`:''}</button>
-                <button class="btn" style="background:${pColor}; color:${p.t==='eletrico'?'#000':'#fff'}" onclick="atk(45,'w')" ${turn!==1?'disabled':''}>${p.moves[0]}</button>
-                <button class="btn" style="background:#4caf50; color:#fff" onclick="heal()" ${potsP==0||turn!==1?'disabled':''}>🧪 POÇÃO (${potsP})</button>
-                <button id="btn-u" class="btn b-u" style="display:${btP>=100?'block':'none'}" onclick="atk(280,'u')">💥 GOLPE ULTRA 💥</button>
-                ${(phase === 5 && hpE < 150) ? `<button class="btn" style="background:#000; color:white; grid-column:span 2; border: 2px solid #f44336" onclick="tryCapture()">🔴 CAPTURAR PIKACHU</button>` : ''}
-            `;
+            document.getElementById('player').src = getPokeImg(p.id, true, p.shiny);
+            enemyImg.src = getPokeImg(e.id, false, isShinyE);
+            document.getElementById('p-n').innerText = p.n + (p.shiny ? " ✨" : "");
+            document.getElementById('p-lv-display').innerText = "LVL " + p.lvl;
+            document.getElementById('e-n').innerText = e.n + (isShinyE ? " ✨" : "");
+            document.getElementById('e-lv').innerText = "Lv." + (phase * 15 + (mundoAtual * 10));
+            render();
             updateVisuals();
         }
 
-        function atk(base, tipo) {
-            if(turn!==1) return;
-            turn = 0; render();
-            if(tipo==='f') cdP.f=4; if(tipo==='m') cdP.m=2; if(tipo==='u') { btP=0; triggerFlash(); }
-            execute(document.getElementById('player'), document.getElementById('enemy'), base, true, () => {
-                if(hpE<=0) {
-                    playSfx(100, 'sawtooth', 0.5);
-                    document.getElementById('enemy').classList.add('faint');
-                    setTimeout(winBattle, 1000);
-                } else { turn=2; setTimeout(ia, 800); }
+        function initRain() {
+            const rain = document.getElementById('rain'); rain.innerHTML = '';
+            for(let i=0; i<40; i++) {
+                const drop = document.createElement('div');
+                drop.className = 'drop'; drop.style.left = Math.random() * 100 + 'vw';
+                drop.style.animationDuration = (0.5 + Math.random() * 0.3) + 's';
+                rain.appendChild(drop);
+            }
+        }
+
+        function updateVisuals() {
+            document.getElementById('p-hp').style.width = (hpP/5).toFixed(0) + "%";
+            document.getElementById('e-hp').style.width = (hpE/5).toFixed(0) + "%";
+            document.getElementById('p-bt-fill').style.width = btP + "%";
+            document.getElementById('p-hp').className = hpP < 150 ? "hp hp-low" : "hp";
+            document.getElementById('e-hp').className = hpE < 150 ? "hp hp-low" : "hp";
+        }
+
+        function render() {
+            const container = document.getElementById('atks');
+            container.innerHTML = "";
+            const moveList = [
+                { n: p.moves[0], d: 45, t: 'n' },
+                { n: p.moves[1], d: 75, t: 'm', cd: cdP.m },
+                { n: p.moves[2], d: 130, t: 'f', cd: cdP.f },
+                { n: "✨ ULTRA", d: 250, t: 'u', ult: true },
+                { n: `🧪 CURA (${potsP})`, d: 0, t: 'h' },
+                { n: "🔴 CAPTURAR", d: 0, t: 'c' }
+            ];
+
+            moveList.forEach(m => {
+                const b = document.createElement('button');
+                b.className = "btn";
+                b.disabled = (turn !== 1) || (m.cd > 0) || (m.ult && btP < 100) || (m.t === 'h' && (potsP <= 0 || hpP >= 500));
+                
+                if(m.t === 'n') b.style.background = "#fff";
+                else if(m.t === 'm') b.style.background = "#ffeb3b";
+                else if(m.t === 'f') b.style.background = "#ff9800";
+                else if(m.t === 'u') b.style.background = "linear-gradient(45deg, #e91e63, #9c27b0)";
+                else if(m.t === 'h') b.style.background = "#4caf50";
+                else if(m.t === 'c') b.style.background = "#f44336";
+
+                if(m.ult) b.style.color = "white";
+
+                b.innerHTML = m.n + (m.cd > 0 ? ` (${m.cd})` : "");
+                
+                b.onclick = () => {
+                    if(m.t === 'h') usarPocao();
+                    else if(m.t === 'c') tentarCapturar();
+                    else atk(m.d, m.t);
+                };
+                container.appendChild(b);
             });
+        }
+
+        function usarPocao() {
+            if(potsP <= 0 || turn !== 1) return;
+            potsP--; hpP = Math.min(500, hpP + 250);
+            playSfx(600, 'sine', 0.3);
+            msg(`Você usou uma poção! +250 HP`);
+            updateVisuals();
+            turn = 2; render();
+            setTimeout(ia, 800);
         }
 
         function execute(aImg, dImg, base, isP, cb) {
@@ -353,89 +430,157 @@
             let isCrit = Math.random() < 0.15;
             let total = Math.floor(base * (isP ? pAtkMult : (eMult * pDefMult)) * mult * (isCrit ? 1.5 : 1));
             
-            aImg.style.transform = isP ? `translateX(50px) scale(1.1)` : `translateX(-50px) scale(1.1)`;
+            aImg.style.transform = isP ? `translateX(60px)` : `translateX(-60px)`;
             
             setTimeout(() => {
                 aImg.style.transform = isP ? "" : "scale(0.9)";
-                dImg.style.filter = "brightness(3) saturate(2)";
-                dImg.parentElement.classList.add('shake');
-                playSfx(isCrit ? 400 : 180, 'square', 0.2);
+                dImg.style.filter = "brightness(3)";
+                document.body.classList.add('shake');
+                playSfx(isCrit ? 400 : 200, 'square', 0.2);
                 
                 const rect = dImg.getBoundingClientRect();
                 createParticles(isP ? p.t : e.t, rect.left + rect.width/2, rect.top + rect.height/2);
                 
-                if(isP) { hpE=Math.max(0, hpE-total); btP=Math.min(100, btP+25); showDmg(total, false, isCrit); }
+                if(isP) { hpE=Math.max(0, hpE-total); btP=Math.min(100, btP+20); showDmg(total, false, isCrit); }
                 else { hpP=Math.max(0, hpP-total); showDmg(total, true, isCrit); }
                 
                 updateVisuals();
-                setTimeout(() => { dImg.style.filter = ""; dImg.parentElement.classList.remove('shake'); cb(); }, 250);
+                setTimeout(() => { dImg.style.filter = ""; document.body.classList.remove('shake'); cb(); }, 250);
             }, 200);
-        }
-
-        function tryCapture() {
-            turn = 0; render();
-            const ball = document.getElementById('pokeball');
-            const target = document.getElementById('enemy').getBoundingClientRect();
-            ball.style.display = "block"; ball.style.left = "10%"; ball.style.bottom = "20%";
-            setTimeout(() => {
-                ball.style.left = (target.left + target.width/4) + "px"; ball.style.bottom = "45%";
-                ball.classList.add('rolling');
-                document.getElementById('enemy').style.opacity = "0";
-            }, 100);
-            setTimeout(() => {
-                ball.classList.remove('rolling');
-                if(Math.random() > 0.4) {
-                    localStorage.setItem('pikachu_captured', 'true');
-                    showEnd(true, "VOCÊ CAPTUROU O PIKACHU ULTRA!");
-                } else {
-                    ball.style.display = "none"; document.getElementById('enemy').style.opacity = "1";
-                    msg("O Pikachu escapou!"); turn = 2; setTimeout(ia, 800);
-                }
-            }, 2000);
-        }
-
-        function ia() {
-            if(hpP <= 0) return;
-            execute(document.getElementById('enemy'), document.getElementById('player'), 55, false, () => {
-                if(hpP<=0) return showEnd(false, "Sua equipe foi derrotada...");
-                if(cdP.f>0) cdP.f--; if(cdP.m>0) cdP.m--;
-                turn=1; render();
-            });
         }
 
         function showDmg(val, isPlayer, crit) {
             const num = document.createElement('div');
             num.className = 'dmg-num';
+            if(crit) num.style.color = "#ffeb3b";
             num.innerHTML = (crit ? "CRÍTICO!<br>" : "") + "-" + val;
-            const rect = document.getElementById(isPlayer ? 'player' : 'enemy').getBoundingClientRect();
-            num.style.left = (rect.left + rect.width/2) + "px"; num.style.top = rect.top + "px";
+            const target = document.getElementById(isPlayer ? 'player' : 'enemy');
+            const rect = target.getBoundingClientRect();
+            num.style.left = (rect.left + 20) + "px"; num.style.top = (rect.top - 20) + "px";
             document.body.appendChild(num);
             setTimeout(() => num.remove(), 800);
         }
 
-        function heal() { hpP=Math.min(500, hpP+200); potsP--; turn=2; updateVisuals(); render(); setTimeout(ia, 800); }
-        function winBattle() { hpP=Math.min(500, hpP+150); phase++; document.getElementById('game').style.display="none"; document.getElementById('level-up').style.display="flex"; }
-        function chooseBonus(t) { if(t==='atk') pAtkMult+=0.25; if(t==='def') pDefMult*=0.85; if(t==='pot') maxPots++; document.getElementById('level-up').style.display="none"; document.getElementById('game').style.display="flex"; nextEnemy(); }
-
-        function updateVisuals() {
-            document.getElementById('p-hp').style.width = (hpP/500*100)+"%";
-            document.getElementById('e-hp').style.width = (hpE/500*100)+"%";
-            document.getElementById('p-bt-fill').style.width = btP+"%";
-            document.getElementById('xp-bar').style.width = ((phase-1)/5*100)+"%";
-            document.getElementById('enemy').className = (phase === 5) ? "boss-aura" : (isShinyE ? "shiny" : "");
-            if(hpP <= 120) document.getElementById('player').classList.add('blink-critical');
-            else document.getElementById('player').classList.remove('blink-critical');
+        function atk(base, tipo) {
+            if(turn!==1) return;
+            turn = 0; render();
+            if(tipo==='f') cdP.f=4; if(tipo==='m') cdP.m=2; if(tipo==='u') { btP=0; triggerFlash(); }
+            
+            execute(document.getElementById('player'), document.getElementById('enemy'), base, true, () => {
+                if(hpE<=0) {
+                    document.getElementById('enemy').classList.add('faint');
+                    setTimeout(winBattle, 1000);
+                } else { turn=2; setTimeout(ia, 600); }
+            });
         }
 
-        function showEnd(win, t) {
-            document.getElementById('game').style.display="none";
-            document.getElementById('end-screen').style.display="flex";
+        function ia() {
+            if(hpP <= 0) return;
+            execute(document.getElementById('enemy'), document.getElementById('player'), 40, false, () => {
+                if(hpP<=0) return showEnd(false, "Sua equipe desmaiou...");
+                if(cdP.f>0) cdP.f--; if(cdP.m>0) cdP.m--;
+                turn=1; render();
+            });
+        }
+
+        function winBattle() { 
+            hpP=Math.min(500, hpP+150); 
+            let evoluiu = checkEvolution();
+
+            if(phase === 5) {
+                if (mundoAtual + 1 < mundos.length && !mundosLiberados.includes(mundoAtual + 1)) {
+                    mundosLiberados.push(mundoAtual + 1);
+                }
+                pks[p.originalIndex].lvl = (pks[p.originalIndex].lvl || 1) + 1;
+                salvaProgresso();
+                showEnd(true, `MUNDO CONCLUÍDO! O próximo destino foi desbloqueado! ${p.n} subiu para o Nível ${pks[p.originalIndex].lvl}! ${evoluiu ? 'E ELE EVOLUIU!' : ''}`);
+            } else {
+                phase++; 
+                document.getElementById('game').style.display="none"; 
+                document.getElementById('lvl-up-text').innerText = evoluiu ? `O QUÊ? SEU ${p.n.toUpperCase()} ESTÁ EVOLUINDO!` : `${p.n} ganhou experiência!`;
+                document.getElementById('level-up').style.display="flex"; 
+            }
+        }
+
+        function checkEvolution() {
+            const currentId = p.id;
+            const currentLvl = pks[p.originalIndex].lvl;
+            const evoData = evolucoes[currentId];
+            if (evoData && currentLvl >= evoData.lvl) {
+                pks[p.originalIndex].id = evoData.into;
+                pks[p.originalIndex].n = evoData.n;
+                pks[p.originalIndex].moves = evoData.moves;
+                p.id = evoData.into;
+                p.n = evoData.n;
+                p.moves = evoData.moves;
+                salvaProgresso();
+                playSfx(500, 'sine', 1.0, 0.4);
+                return true;
+            }
+            return false;
+        }
+
+        function tentarCapturar() {
+            if(turn !== 1) return;
+            turn = 0; render();
+            msg(`Lançando Pokébola em ${e.n}...`);
+            
+            const bola = document.createElement('div');
+            bola.style.cssText = "position:fixed; width:30px; height:30px; background:radial-gradient(red 50%, white 50%); border-radius:50%; border:2px solid black; z-index:1000; left:20%; bottom:20%; transition:0.5s";
+            document.body.appendChild(bola);
+
+            setTimeout(() => {
+                const rect = document.getElementById('enemy').getBoundingClientRect();
+                bola.style.left = rect.left + "px";
+                bola.style.top = rect.top + "px";
+                
+                setTimeout(() => {
+                    const chance = (hpE/500); 
+                    if (Math.random() > chance) {
+                        playSfx(800, 'sine', 0.5);
+                        document.getElementById('enemy').classList.add('faint');
+                        msg(`Sucesso! ${e.n} foi capturado!`);
+                        
+                        // Garante que o boss ou lendário capturado vá para a equipe
+                        let novoPk = JSON.parse(JSON.stringify(e));
+                        novoPk.lvl = 1;
+                        novoPk.shiny = isShinyE;
+                        pks.push(novoPk);
+                        salvaProgresso();
+                        
+                        setTimeout(winBattle, 1500);
+                    } else {
+                        msg(`${e.n} escapou da bola!`);
+                        playSfx(100, 'square', 0.2);
+                        turn = 2; render();
+                        setTimeout(ia, 800);
+                    }
+                    bola.remove();
+                }, 500);
+            }, 50);
+        }
+
+        function chooseBonus(type) {
+            if(type === 'atk') pAtkMult += 0.25;
+            if(type === 'def') pDefMult *= 0.85;
+            if(type === 'pot') maxPots++;
+            document.getElementById('level-up').style.display = "none";
+            document.getElementById('game').style.display = "flex";
+            nextEnemy();
+        }
+
+        function showEnd(win, m) {
+            document.getElementById('game').style.display = "none";
+            document.getElementById('end-screen').style.display = "flex";
             document.getElementById('end-title').innerText = win ? "VITÓRIA!" : "DERROTA";
-            document.getElementById('end-msg').innerText = t;
+            document.getElementById('end-title').style.color = win ? "#4caf50" : "#f44336";
+            document.getElementById('end-msg').innerText = m;
+            if(bgmNode) clearTimeout(bgmNode);
         }
 
-        function msg(m) { document.getElementById('msg-inner').innerText = m; }
-        function triggerFlash() { document.documentElement.style.setProperty('--flash', "rgba(255,255,255,0.6)"); setTimeout(()=>document.documentElement.style.setProperty('--flash','transparent'), 100); }
+        function voltarAoInicio() {
+            location.reload();
+        }
     </script>
 </body>
 </html>
