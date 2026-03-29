@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pokémon ULTRA - Elite Journey</title>
+    <style>
+        :root { --sky: #4facfe; --grass-l: #76b852; --grass-d: #2d5a27; --ui: #fdfce0; --flash: rgba(255,255,255,0); }
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #000; color: white; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        body::after { content: ""; position: fixed; inset: 0; background: var(--flash); pointer-events: none; z-index: 999; transition: 0.1s; }
+
+        .bg { position: fixed; inset: 0; background: linear-gradient(to bottom, var(--sky) 0%, #00f2fe 50%, var(--grass-l) 50%, var(--grass-d) 100%); z-index: -1; transition: 1s; }
+        .tempestade { filter: brightness(0.4) saturate(1.5) hue-rotate(200deg); }
+        
+        /* Efeito de Chuva */
+        #rain { position: fixed; inset: 0; pointer-events: none; z-index: 20; display: none; }
+        .drop { position: absolute; background: rgba(255,255,255,0.4); width: 2px; height: 15px; animation: fall linear infinite; }
+        @keyframes fall { to { transform: translateY(100vh) translateX(50px); } }
+
+        /* Animação de Boss */
+        #boss-intro { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; animation: fadeIn 0.5s; }
+        .boss-img { width: 250px; filter: drop-shadow(0 0 30px #ffeb3b); animation: zoomIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .boss-text { font-size: 40px; color: #ffeb3b; font-weight: 900; text-shadow: 0 0 20px red; margin-top: 20px; text-transform: uppercase; letter-spacing: 5px; }
+        
+        @keyframes zoomIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1.2); opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .ground { position: absolute; bottom: 0; width: 100%; height: 50%; background: linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(to bottom, var(--grass-l), var(--grass-d)); background-size: 60px 60px; transform: perspective(500px) rotateX(65deg); transform-origin: top; animation: move 3s linear infinite; }
+        @keyframes move { from { background-position: 0 0; } to { background-position: 0 60px; } }
+
+        #start-screen, #menu, #level-up, #end-screen, #game { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        #start-screen { display: flex; background: rgba(0,0,0,0.8); z-index: 300; }
+        .logo-ultra { font-size: 60px; font-weight: 900; color: #ffeb3b; text-shadow: 4px 4px #e91e63, 8px 8px #000; margin-bottom: 20px; animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
+
+        #menu { background: rgba(0,0,0,0.85); z-index: 100; }
+        #level-up { background: rgba(0,0,0,0.9); z-index: 90; }
+        #end-screen { background: rgba(0,0,0,0.95); z-index: 200; }
+        #game { z-index: 50; }
+
+        .scene { width: 100%; flex: 1; position: relative; overflow: hidden; }
+        #player { position: absolute; bottom: 8%; left: 8%; width: 42vw; max-width: 280px; z-index: 10; transition: 0.4s; filter: drop-shadow(0 15px 10px rgba(0,0,0,0.4)); }
+        #enemy { position: absolute; bottom: 35%; right: 10%; width: 35vw; max-width: 200px; z-index: 5; transition: 0.5s; filter: drop-shadow(0 10px 8px rgba(0,0,0,0.4)); transform: scale(0.9); }
+
+        .hp-critical { background: #f44336 !important; box-shadow: 0 0 10px #f44336; }
+        .blink-critical { animation: blink 0.5s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; filter: brightness(2) drop-shadow(0 0 15px red); } }
+        
+        #pokeball { position: absolute; width: 40px; height: 40px; display: none; z-index: 100; transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .particle { position: absolute; pointer-events: none; border-radius: 2px; z-index: 100; animation: particleAnim 0.6s ease-out forwards; }
+        @keyframes particleAnim { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; } }
+
+        .faint { transform: translateY(300px) rotate(20deg) !important; opacity: 0; }
+        .shiny { filter: drop-shadow(0 0 15px gold) brightness(1.1) !important; }
+        .boss-aura { filter: drop-shadow(0 0 20px #ffeb3b) contrast(1.2) !important; }
+        
+        .dmg-num { position: absolute; font-size: 35px; font-weight: 900; color: #fff; text-shadow: 2px 2px 0 #000; animation: floatUp 0.8s forwards; z-index: 1000; pointer-events: none;}
+        .crit-text { color: #ffeb3b; font-style: italic; font-size: 20px; }
+        @keyframes floatUp { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-120px); } }
+
+        .hud { position: absolute; width: 160px; background: var(--ui); padding: 8px; border: 3px solid #333; color: #111; box-shadow: 4px 4px 0 #000; border-radius: 0 15px 0 15px; }
+        #h-e { top: 45px; left: 15px; }
+        #h-p { bottom: 190px; right: 15px; }
+        .hp-bar-bg { background:#444; height: 10px; margin-top: 4px; border: 1px solid #000; border-radius: 5px; overflow: hidden; }
+        .hp { height: 100%; background: #4caf50; transition: 0.5s width; }
+
+        .panel { width: 100%; background: #222; border-top: 4px solid #000; padding: 10px; display: grid; grid-template-columns: 1fr 1.3fr; gap: 8px; height: 180px; box-sizing: border-box; }
+        #msg-box { background: #fff; border: 3px solid #333; color: #000; padding: 8px; font-weight: bold; font-size: 13px; border-radius: 8px; text-align: left; overflow-y: auto; line-height: 1.2; }
+        #atks { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        
+        .btn { border: 3px solid #000; font-family: inherit; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 10px; border-radius: 6px; padding: 6px; box-shadow: 2px 2px 0 #000; transition: 0.1s; }
+        .btn:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0 #000; }
+        .btn:disabled { filter: grayscale(1); opacity: 0.5; cursor: not-allowed; }
+        .b-u { background: linear-gradient(45deg, #f093fb, #f5576c); color: white; grid-column: span 2; font-size: 12px; }
+        
+        .modal-content { background: white; padding: 25px; border-radius: 20px; color: black; border: 6px solid #333; width: 85%; max-width: 350px; }
+        .shake { animation: shake 0.3s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+        .rolling { animation: rotate 0.5s infinite linear; }
+        @keyframes rotate { from { transform: rotate(0); } to { transform: rotate(360deg); } }
+
+        #xp-container { position:fixed; top:0; width:100%; height:15px; background:#111; z-index:1000; border-bottom: 2px solid #000; }
+        #xp-bar { height:100%; width:0%; background:#ffeb3b; transition:1s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: inset 0 -4px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+    <div id="xp-container"><div id="xp-bar"></div></div>
+    <div class="bg" id="main-bg"><div class="ground"></div></div>
+    <div id="rain"></div>
+
+    <div id="boss-intro">
+        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png" class="boss-img">
+        <div class="boss-text">FINAL BOSS</div>
+        <div style="color: white; font-weight: bold; margin-top: 10px;">PIKACHU LENDÁRIO</div>
+    </div>
+    
+    <div id="start-screen">
+        <h1 class="logo-ultra">POKÉMON<br>ULTRA</h1>
+        <button onclick="goToSelection()" class="btn" style="background:#4caf50; color:white; font-size:20px; padding:15px 40px; border-radius:50px;">INICIAR JORNADA</button>
+    </div>
+
+    <div id="menu">
+        <div class="modal-content">
+            <h2 style="color:#e91e63; margin-top:0">ESCOLHA SEU COMPANHEIRO</h2>
+            <div id="team-selection" style="display: flex; flex-wrap: wrap; justify-content: center;"></div>
+        </div>
+    </div>
+
+    <div id="level-up">
+        <h2 style="color:#ffeb3b; font-size: 32px; text-shadow: 2px 2px #000;">LEVEL UP!</h2>
+        <p>Escolha um bônus para sua equipe:</p>
+        <button onclick="chooseBonus('atk')" class="btn" style="background:#ff5252; color:white; width:260px; margin:8px; font-size: 14px;">⚔️ FORÇA BRUTA (+25% ATK)</button>
+        <button onclick="chooseBonus('def')" class="btn" style="background:#ffd740; width:260px; margin:8px; font-size: 14px;">🛡️ ARMADURA (+15% DEF)</button>
+        <button onclick="chooseBonus('pot')" class="btn" style="background:#80d8ff; width:260px; margin:8px; font-size: 14px;">🧪 ESTOQUE (+1 POÇÃO)</button>
+    </div>
+
+    <div id="end-screen">
+        <div class="modal-content">
+            <h1 id="end-title">FIM DE JOGO</h1>
+            <p id="end-msg"></p>
+            <button onclick="location.reload()" class="btn" style="background:#ffeb3b; width:100%; padding:15px; font-size:16px">RECOMEÇAR</button>
+        </div>
+    </div>
+
+    <div id="game">
+        <div class="scene" id="scene">
+            <img id="pokeball" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png">
+            <img id="enemy" src="">
+            <img id="player" src="">
+            
+            <div id="h-e" class="hud">
+                <strong><span id="e-n"></span></strong> <span id="e-lv" style="font-size:10px; float:right"></span>
+                <div class="hp-bar-bg"><div id="e-hp" class="hp"></div></div>
+            </div>
+            
+            <div id="h-p" class="hud">
+                <strong><span id="p-n"></span></strong>
+                <div class="hp-bar-bg"><div id="p-hp" class="hp"></div></div>
+                <div style="background:#444;height:5px;margin-top:4px;border-radius:3px; border:1px solid #000">
+                    <div id="p-bt-fill" style="height:100%; background:#ffeb3b; width:0%; transition:0.3s; border-radius:3px"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel">
+            <div id="msg-box"><div id="msg-inner">...</div></div>
+            <div id="atks"></div>
+        </div>
+    </div>
+
+    <script>
+        const audio = new (window.AudioContext || window.webkitAudioContext)();
+        let bgmNode = null;
+
+        const typeColors = { fogo: "#ff9800", agua: "#2196f3", planta: "#4caf50", eletrico: "#fdd835", normal: "#9e9e9e" };
+
+        function playSfx(freq, type, duration, vol=0.1) {
+            try {
+                const osc = audio.createOscillator(); const g = audio.createGain();
+                osc.type = type; osc.frequency.setValueAtTime(freq, audio.currentTime);
+                g.gain.setValueAtTime(vol, audio.currentTime); g.gain.exponentialRampToValueAtTime(0.01, audio.currentTime + duration);
+                osc.connect(g); g.connect(audio.destination); osc.start(); osc.stop(audio.currentTime + duration);
+            } catch(e) {}
+        }
+
+        function playSparkSfx() {
+            for(let i=0; i<5; i++) setTimeout(() => playSfx(Math.random() * 1000 + 2000, 'sawtooth', 0.05, 0.02), i * 40);
+        }
+
+        function playThunderSfx() {
+            playSfx(100, 'sawtooth', 0.8, 0.2);
+            triggerFlash();
+        }
+
+        function initRain() {
+            const rain = document.getElementById('rain');
+            rain.innerHTML = '';
+            for(let i=0; i<80; i++) {
+                const drop = document.createElement('div');
+                drop.className = 'drop';
+                drop.style.left = Math.random() * 100 + 'vw';
+                drop.style.animationDuration = (0.5 + Math.random() * 0.3) + 's';
+                drop.style.animationDelay = Math.random() * 2 + 's';
+                rain.appendChild(drop);
+            }
+        }
+
+        function playBGM(isBoss = false) {
+            if (bgmNode) clearTimeout(bgmNode);
+            const tempo = isBoss ? 0.12 : 0.18;
+            const notes = isBoss ? [200, 220, 200, 250, 180] : [150, 180, 200, 150, 220];
+            let i = 0;
+            function playNote() {
+                const osc = audio.createOscillator(); const g = audio.createGain();
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(notes[i % notes.length], audio.currentTime);
+                g.gain.setValueAtTime(0.02, audio.currentTime); g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + tempo);
+                osc.connect(g); g.connect(audio.destination); osc.start(); osc.stop(audio.currentTime + tempo);
+                i++; bgmNode = setTimeout(playNote, tempo * 1000);
+            }
+            playNote();
+        }
+
+        function createParticles(type, x, y) {
+            const colors = { fogo: ['#ff4500', '#ff8c00', '#fff'], agua: ['#00bfff', '#add8e6', '#fff'], planta: ['#32cd32', '#90ee90', '#fff'], eletrico: ['#ffff00', '#ffffff', '#ffeb3b'] };
+            const typeColor = colors[type] || ['#fff', '#ccc'];
+            for(let i=0; i<15; i++) {
+                const p = document.createElement('div'); p.className = 'particle';
+                const size = Math.random() * 8 + 4;
+                p.style.width = size + 'px'; p.style.height = size + 'px';
+                p.style.background = typeColor[Math.floor(Math.random() * typeColor.length)];
+                p.style.left = x + 'px'; p.style.top = y + 'px';
+                p.style.setProperty('--dx', (Math.random() - 0.5) * 150 + 'px');
+                p.style.setProperty('--dy', (Math.random() - 0.5) * 150 + 'px');
+                document.getElementById('scene').appendChild(p);
+                setTimeout(() => p.remove(), 600);
+            }
+        }
+
+        const pks = [
+            { id:1, n: "Bulbasaur", t: "planta", moves: ["Investida", "Folha Navalha", "Raio Solar"], evos:[2, 3] },
+            { id:4, n: "Charmander", t: "fogo", moves: ["Arranhão", "Brasa", "Lança-Chamas"], evos:[5, 6] },
+            { id:7, n: "Squirtle", t: "agua", moves: ["Pancada", "Pistola d'Água", "Hidro Bomba"], evos:[8, 9] }
+        ];
+
+        const PIKACHU_DATA = { id:25, n: "Pikachu", t: "eletrico", moves: ["Choque", "Relâmpago", "Trovão"], evos:[26, 26] };
+        const typeChart = { fogo:{planta:2, agua:0.5}, agua:{fogo:2, planta:0.5}, planta:{agua:2, fogo:0.5}, eletrico:{agua:2} };
+
+        let p, e, hpP=500, hpE=500, btP=0, turn=1, potsP=2, maxPots=2, cdP={f:0, m:0}, phase=1, eMult=1, pAtkMult=1, pDefMult=1;
+        let isShinyE=false;
+
+        function goToSelection() {
+            if (audio.state === 'suspended') audio.resume();
+            document.getElementById('start-screen').style.display = "none";
+            document.getElementById('menu').style.display = "flex";
+            updateMenu();
+            playSfx(400, 'sine', 0.2);
+        }
+
+        function updateMenu() {
+            const container = document.getElementById('team-selection');
+            container.innerHTML = "";
+            let menuList = [...pks];
+            if(localStorage.getItem('pikachu_captured') === 'true') menuList.push(PIKACHU_DATA);
+
+            menuList.forEach((poke) => {
+                const b = document.createElement('button');
+                b.className = "btn";
+                b.style.margin = "8px";
+                b.style.padding = "10px";
+                b.style.background = typeColors[poke.t] || "#eee";
+                b.style.color = poke.t === 'eletrico' ? 'black' : 'white';
+                b.innerHTML = `<img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${poke.id}.png" style="width:50px"><br>${poke.n}`;
+                b.onclick = () => start(poke);
+                container.appendChild(b);
+            });
+        }
+
+        function getPokeImg(id, back=false, shiny=false) {
+            if(back) return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/back/${id}.png`;
+            return shiny ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/${id}.png` : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`;
+        }
+
+        function start(pokeObj) {
+            p = JSON.parse(JSON.stringify(pokeObj)); 
+            hpP=500; phase=1; eMult=1; maxPots=2; potsP=2; pAtkMult=1; pDefMult=1; btP=0;
+            document.getElementById('menu').style.display="none";
+            document.getElementById('game').style.display="flex";
+            playBGM();
+            nextEnemy();
+        }
+
+        async function nextEnemy() {
+            if(phase > 5) return showEnd(true, "Parabéns! Você se tornou o Campeão Ultra!");
+            turn = 1; cdP = {f:0, m:0}; potsP = maxPots; hpE = 500;
+            
+            if(p.id !== 25 && p.id !== 26) {
+                if(phase === 3) evolve(0);
+                if(phase === 5) evolve(1);
+            }
+
+            if(phase === 5) {
+                // Intro de Boss
+                document.getElementById('boss-intro').style.display = 'flex';
+                playThunderSfx();
+                await new Promise(r => setTimeout(r, 3000));
+                document.getElementById('boss-intro').style.display = 'none';
+                
+                // Clima de Chuva
+                document.getElementById('main-bg').classList.add('tempestade');
+                document.getElementById('rain').style.display = 'block';
+                initRain();
+                playBGM(true);
+                
+                e = PIKACHU_DATA; eMult = 3.0; isShinyE = true;
+                msg("⚠️ O CÉU ESCURECE... O PIKACHU LENDÁRIO DESCEU!");
+            } else {
+                document.getElementById('main-bg').classList.remove('tempestade');
+                document.getElementById('rain').style.display = 'none';
+                e = pks[Math.floor(Math.random()*3)];
+                eMult = 1 + (phase * 0.4); isShinyE = Math.random() < 0.1;
+                msg(`Fase ${phase}: Um ${e.n} apareceu!`);
+            }
+
+            document.getElementById('player').src = getPokeImg(p.id, true);
+            document.getElementById('enemy').src = getPokeImg(e.id, false, isShinyE);
+            document.getElementById('enemy').classList.remove('faint');
+            document.getElementById('p-n').innerText = p.n;
+            document.getElementById('e-n').innerText = e.n + (isShinyE ? " ✨" : "");
+            document.getElementById('e-lv').innerText = "Lv." + (phase * 20);
+            render();
+        }
+
+        function evolve(stage) {
+            const original = pks.find(x => x.n === p.n || x.evos.includes(p.id));
+            if(original) {
+                p.id = original.evos[stage];
+                p.n = (stage === 0) ? "Evolução Intermediária" : "Evolução Final"; // Simples para exemplo
+                playSfx(600, 'square', 0.5);
+                triggerFlash();
+            }
+        }
+
+        function render() {
+            const area = document.getElementById('atks');
+            const pColor = typeColors[p.t] || "#555";
+            area.innerHTML = `
+                <button class="btn" style="background:#d32f2f;color:#fff" onclick="atk(120,'f')" ${cdP.f>0||turn!==1?'disabled':''}>${p.moves[2]} ${cdP.f>0?`(${cdP.f})`:''}</button>
+                <button class="btn" style="background:#fbc02d" onclick="atk(75,'m')" ${cdP.m>0||turn!==1?'disabled':''}>${p.moves[1]} ${cdP.m>0?`(${cdP.m})`:''}</button>
+                <button class="btn" style="background:${pColor}; color:${p.t==='eletrico'?'#000':'#fff'}" onclick="atk(45,'w')" ${turn!==1?'disabled':''}>${p.moves[0]}</button>
+                <button class="btn" style="background:#4caf50; color:#fff" onclick="heal()" ${potsP==0||turn!==1?'disabled':''}>🧪 POÇÃO (${potsP})</button>
+                <button id="btn-u" class="btn b-u" style="display:${btP>=100?'block':'none'}" onclick="atk(280,'u')">💥 GOLPE ULTRA 💥</button>
+                ${(phase === 5 && hpE < 150) ? `<button class="btn" style="background:#000; color:white; grid-column:span 2; border: 2px solid #f44336" onclick="tryCapture()">🔴 CAPTURAR PIKACHU</button>` : ''}
+            `;
+            updateVisuals();
+        }
+
+        function atk(base, tipo) {
+            if(turn!==1) return;
+            turn = 0; render();
+            if(tipo==='f') cdP.f=4; if(tipo==='m') cdP.m=2; if(tipo==='u') { btP=0; triggerFlash(); }
+            execute(document.getElementById('player'), document.getElementById('enemy'), base, true, () => {
+                if(hpE<=0) {
+                    playSfx(100, 'sawtooth', 0.5);
+                    document.getElementById('enemy').classList.add('faint');
+                    setTimeout(winBattle, 1000);
+                } else { turn=2; setTimeout(ia, 800); }
+            });
+        }
+
+        function execute(aImg, dImg, base, isP, cb) {
+            let mult = 1;
+            if (isP && typeChart[p.t] && typeChart[p.t][e.t]) mult = typeChart[p.t][e.t];
+            let isCrit = Math.random() < 0.15;
+            let total = Math.floor(base * (isP ? pAtkMult : (eMult * pDefMult)) * mult * (isCrit ? 1.5 : 1));
+            
+            aImg.style.transform = isP ? `translateX(50px) scale(1.1)` : `translateX(-50px) scale(1.1)`;
+            
+            setTimeout(() => {
+                aImg.style.transform = isP ? "" : "scale(0.9)";
+                dImg.style.filter = "brightness(3) saturate(2)";
+                dImg.parentElement.classList.add('shake');
+                playSfx(isCrit ? 400 : 180, 'square', 0.2);
+                
+                const rect = dImg.getBoundingClientRect();
+                createParticles(isP ? p.t : e.t, rect.left + rect.width/2, rect.top + rect.height/2);
+                
+                if(isP) { hpE=Math.max(0, hpE-total); btP=Math.min(100, btP+25); showDmg(total, false, isCrit); }
+                else { hpP=Math.max(0, hpP-total); showDmg(total, true, isCrit); }
+                
+                updateVisuals();
+                setTimeout(() => { dImg.style.filter = ""; dImg.parentElement.classList.remove('shake'); cb(); }, 250);
+            }, 200);
+        }
+
+        function tryCapture() {
+            turn = 0; render();
+            const ball = document.getElementById('pokeball');
+            const target = document.getElementById('enemy').getBoundingClientRect();
+            ball.style.display = "block"; ball.style.left = "10%"; ball.style.bottom = "20%";
+            setTimeout(() => {
+                ball.style.left = (target.left + target.width/4) + "px"; ball.style.bottom = "45%";
+                ball.classList.add('rolling');
+                document.getElementById('enemy').style.opacity = "0";
+            }, 100);
+            setTimeout(() => {
+                ball.classList.remove('rolling');
+                if(Math.random() > 0.4) {
+                    localStorage.setItem('pikachu_captured', 'true');
+                    showEnd(true, "VOCÊ CAPTUROU O PIKACHU ULTRA!");
+                } else {
+                    ball.style.display = "none"; document.getElementById('enemy').style.opacity = "1";
+                    msg("O Pikachu escapou!"); turn = 2; setTimeout(ia, 800);
+                }
+            }, 2000);
+        }
+
+        function ia() {
+            if(hpP <= 0) return;
+            execute(document.getElementById('enemy'), document.getElementById('player'), 55, false, () => {
+                if(hpP<=0) return showEnd(false, "Sua equipe foi derrotada...");
+                if(cdP.f>0) cdP.f--; if(cdP.m>0) cdP.m--;
+                turn=1; render();
+            });
+        }
+
+        function showDmg(val, isPlayer, crit) {
+            const num = document.createElement('div');
+            num.className = 'dmg-num';
+            num.innerHTML = (crit ? "CRÍTICO!<br>" : "") + "-" + val;
+            const rect = document.getElementById(isPlayer ? 'player' : 'enemy').getBoundingClientRect();
+            num.style.left = (rect.left + rect.width/2) + "px"; num.style.top = rect.top + "px";
+            document.body.appendChild(num);
+            setTimeout(() => num.remove(), 800);
+        }
+
+        function heal() { hpP=Math.min(500, hpP+200); potsP--; turn=2; updateVisuals(); render(); setTimeout(ia, 800); }
+        function winBattle() { hpP=Math.min(500, hpP+150); phase++; document.getElementById('game').style.display="none"; document.getElementById('level-up').style.display="flex"; }
+        function chooseBonus(t) { if(t==='atk') pAtkMult+=0.25; if(t==='def') pDefMult*=0.85; if(t==='pot') maxPots++; document.getElementById('level-up').style.display="none"; document.getElementById('game').style.display="flex"; nextEnemy(); }
+
+        function updateVisuals() {
+            document.getElementById('p-hp').style.width = (hpP/500*100)+"%";
+            document.getElementById('e-hp').style.width = (hpE/500*100)+"%";
+            document.getElementById('p-bt-fill').style.width = btP+"%";
+            document.getElementById('xp-bar').style.width = ((phase-1)/5*100)+"%";
+            document.getElementById('enemy').className = (phase === 5) ? "boss-aura" : (isShinyE ? "shiny" : "");
+            if(hpP <= 120) document.getElementById('player').classList.add('blink-critical');
+            else document.getElementById('player').classList.remove('blink-critical');
+        }
+
+        function showEnd(win, t) {
+            document.getElementById('game').style.display="none";
+            document.getElementById('end-screen').style.display="flex";
+            document.getElementById('end-title').innerText = win ? "VITÓRIA!" : "DERROTA";
+            document.getElementById('end-msg').innerText = t;
+        }
+
+        function msg(m) { document.getElementById('msg-inner').innerText = m; }
+        function triggerFlash() { document.documentElement.style.setProperty('--flash', "rgba(255,255,255,0.6)"); setTimeout(()=>document.documentElement.style.setProperty('--flash','transparent'), 100); }
+    </script>
+</body>
+</html>
